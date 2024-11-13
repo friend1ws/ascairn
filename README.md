@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="PXL_20230717_002047061.png" alt="Cairn at Mt. Karamatsu (2023/7)" width="250">
-  <p>Cairn at Mt. Karamatsu (2023/7)</p>
+  <img src="PXL_20230717_002047061.png" alt="Cairn at Mt. Karamatsu" width="250">
+  <p>Maruyama cairn at Mt. Karamatsu</p>
 </div>
 
 # ascairn
