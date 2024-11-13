@@ -2,6 +2,7 @@ import click
 import os
 import importlib.resources as pkg_resources
 from ascairn.utils import *
+from ascairn.match import *
 # from ascairn.utils import bam_processing, dummy_scripts
 
 @click.command()
@@ -42,6 +43,8 @@ def type_command(bam_file, output_prefix, reference, threads, baseline_region_fi
     if output_dir != '' and not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    ##########
+    # preparing several preset files
     if baseline_region_file is None:
         if reference == "hg38":
             with pkg_resources.path("ascairn.data", "chr22_long_arm_hg38.bed") as default_baseline_region_file:
@@ -61,8 +64,18 @@ def type_command(bam_file, output_prefix, reference, threads, baseline_region_fi
     with pkg_resources.path("ascairn.data", "rare_kmer_list.fa") as default_rare_kmer_file:
         rare_kmer_file = str(default_rare_kmer_file)
 
+    with pkg_resources.path("ascairn.data", "rare_kmer_list.fa") as default_rare_kmer_file:
+        rare_kmer_file = str(default_rare_kmer_file)
+
+    ##########
+
+
     depth = check_depth(bam_file, output_prefix, baseline_region_file)
 
     gather_rare_kmer(bam_file, output_prefix, cen_region_file, rare_kmer_file, kmer_size = 27, num_threads = threads)
 
+
+    match_cluster_haplotype(output_prefix + ".kmer_count.txt", output_prefix + ".match/chr" + cen_id, 
+        kmer_info_file, cluster_kmer_count_file, depth,
+        cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4):
 
