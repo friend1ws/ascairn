@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        "ascairn": ["data/*"],
+        "ascairn": ["data/*", "data/cluster/*", "data/kmer_info/*"],
     },
     install_requires=[
         "click",
