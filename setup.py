@@ -10,6 +10,8 @@ setup(
     },
     install_requires=[
         "click",
+        "scipy",
+        "polars",
         # "pysam",
     ],
     extras_require = {

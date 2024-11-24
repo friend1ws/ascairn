@@ -49,10 +49,10 @@ def is_exists_s3(bam_object):
 
 
 
-def check_depth(bam_file, output_prefix, baseline_region_file):
+def check_depth(bam_file, output_file, baseline_region_file, num_threads = 4):
 
-    # make directory for the output prefix
-    tmp_dir = output_prefix + ".tmp_dir.check_depth"
+    # make directory for the output file 
+    tmp_dir = output_file + ".tmp_dir.check_depth"
     if not os.path.exists(tmp_dir):
         os.makedirs(tmp_dir)
  
@@ -61,18 +61,18 @@ def check_depth(bam_file, output_prefix, baseline_region_file):
     mosdepth_prefix = tmp_dir + "/baseline"
     mosdepth_summary = f'{mosdepth_prefix}.mosdepth.summary.txt'
 
-    subprocess.run(["samtools", "view", "-bh", bam_file, "-L", baseline_region_file, "-M", "-o", baseline_bam], check=True)
+    subprocess.run(["samtools", "view", "-bh", bam_file, "-L", baseline_region_file, "-M", "-@", str(num_threads), "-o", baseline_bam], check=True)
     
     subprocess.run(["samtools", "index", baseline_bam], check=True)
     
-    subprocess.run(["mosdepth", mosdepth_prefix, baseline_bam, "-b", baseline_region_file], check=True)
+    subprocess.run(["mosdepth", mosdepth_prefix, baseline_bam, "-b", baseline_region_file, "-t", str(num_threads)], check=True)
 
     depth = None
     with open(mosdepth_summary, 'r') as hin:
         for F in csv.DictReader(hin, delimiter = '\t'):
             if F["chrom"] == "total_region": depth = float(F["mean"])
 
-    with open(output_prefix + ".depth.txt", 'w') as hout:
+    with open(output_file, 'w') as hout:
         print(depth, file = hout)
     
     shutil.rmtree(tmp_dir)
@@ -97,7 +97,7 @@ def gather_rare_kmer(bam_file, output_prefix, cen_region_file, rare_kmer_file, k
     subprocess.run(["samtools", "view", "-bh", bam_file, "-L", cen_region_file, "-M", "-@", str(num_threads), "-o", tmp_bam], check=True)
 
     with open(tmp_fasta, 'w') as hout:
-        subprocess.run(["samtools", "fasta", "-@", str(num_threads), tmp_bam], stdout=hout, check=True)
+        subprocess.run(["samtools", "fasta", "-@", str(num_threads), tmp_bam], stdout=hout, stderr=subprocess.DEVNULL, check=True)
 
     subprocess.run(["jellyfish", "count", "-s", "100M", "-C", "-m", str(kmer_size), "-t", str(num_threads), "--if", rare_kmer_file, "-o", tmp_kmer_jf, tmp_fasta], check = True) 
         
