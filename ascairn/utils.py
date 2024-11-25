@@ -33,6 +33,7 @@ def is_configured_aws():
     import boto3
     from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
+    """
     try:
         session = boto3.Session()
         credentials = session.get_credentials()
@@ -44,6 +45,21 @@ def is_configured_aws():
         else:
             return False
     except (NoCredentialsError, PartialCredentialsError):
+        return False
+    """
+
+    try:
+        session = boto3.Session()
+        credentials = session.get_credentials()
+
+        if credentials is None or not (credentials.access_key and credentials.secret_key):
+            return False
+
+        sts = session.client('sts')
+        sts.get_caller_identity()
+        return True
+
+    except (NoCredentialsError, PartialCredentialsError, ClientError):
         return False
 
 
