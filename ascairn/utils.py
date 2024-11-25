@@ -28,6 +28,25 @@ def is_tool(executable):
     return True
 
 
+def is_configured_aws():
+
+    import boto3
+    from botocore.exceptions import NoCredentialsError, PartialCredentialsError
+
+    try:
+        session = boto3.Session()
+        credentials = session.get_credentials()
+
+        if credentials is None:
+            return False
+        if credentials.access_key and credentials.secret_key:
+            return True
+        else:
+            return False
+    except (NoCredentialsError, PartialCredentialsError):
+        return False
+
+
 def is_exists_s3(bam_object):
 
     from urllib.parse import urlparse
@@ -39,7 +58,14 @@ def is_exists_s3(bam_object):
     tkey = obj_p.path
     if tkey.startswith("/"): tkey = tkey[1:]
 
-    client = boto3.client("s3")
+    if is_configured_aws():
+        logger.info("Using configured AWS credentials.")
+        client = boto3.client("s3")
+    else:
+        logger.info("No AWS credentials found. Using unsigned client.")
+        config = Config(signature_version='UNSIGNED')
+        client = boto3.client("s3", config=config)
+
     try:
         response = client.head_object(Bucket = tbucket, Key = tkey)
     except:
