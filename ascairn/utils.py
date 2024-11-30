@@ -124,7 +124,7 @@ def check_depth(bam_file, output_file, baseline_region_file, num_threads = 4):
  
 
 
-def gather_rare_kmer(bam_file, output_prefix, cen_region_file, rare_kmer_file, kmer_size = 27, num_threads = 4):
+def gather_rare_kmer(bam_file, output_file, cen_region_file, rare_kmer_file, kmer_size = 27, num_threads = 4):
 
     tmp_dir = output_prefix + ".tmp_dir.gather_rare_kmer"
     if not os.path.exists(tmp_dir):
@@ -165,3 +165,79 @@ def gather_rare_kmer(bam_file, output_prefix, cen_region_file, rare_kmer_file, k
     shutil.rmtree(tmp_dir)
 
 
+
+def count_rare_kmer(bam_file, output_file, cen_region_file, rare_kmer_file, kmer_size = 27, num_threads = 4):
+
+    output_dir = os.path.dirname(output_file)
+    if output_dir != '' and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    tmp_bam = output_file + ".tmp.centromere.bam"
+    tmp_fasta = output_file + ".centromere.fasta"
+    tmp_kmer_jf = output_file + ".centromere.rare_kmer.jf"
+    tmp_kmer_fa = output_file + ".centromere.rare_kmer.fa"
+    # kmer_count_file = output_prefix + ".kmer_count.txt"
+
+    subprocess.run(["samtools", "view", "-bh", bam_file, "-L", cen_region_file, "-M", "-@", str(num_threads), "-o", tmp_bam], check=True)
+
+    with open(tmp_fasta, 'w') as hout:
+        subprocess.run(["samtools", "fasta", "-@", str(num_threads), tmp_bam], stdout=hout, stderr=subprocess.DEVNULL, check=True)
+
+    subprocess.run(["jellyfish", "count", "-s", "100M", "-C", "-m", str(kmer_size), "-t", str(num_threads), "--if", rare_kmer_file, "-o", tmp_kmer_jf, tmp_fasta], check = True) 
+        
+    with open(tmp_kmer_fa, 'w') as hout:
+        subprocess.run(["jellyfish", "dump", tmp_kmer_jf], stdout=hout, check=True)
+
+    
+    kmer = None
+    count = None
+    with open(tmp_kmer_fa, 'r') as hin, open(output_file, 'w') as hout:
+        for line in hin:
+            line = line.rstrip('\n')
+            if line.startswith('>'): 
+                if kmer is not None: 
+                    print(f'{kmer}\t{count}', file = hout)
+                count = line.lstrip('>').rstrip('\n')
+            else:
+                kmer = line.rstrip('\n')
+
+        if kmer is not None:
+            print(f'{kmer}\t{count}', file = hout)
+    
+    os.remove(tmp_bam)
+    os.remove(tmp_fasta)
+    os.remove(tmp_kmer_jf)
+    os.remove(tmp_kmer_fa)
+
+
+def convert_tsv_to_fasta(kmer_file_tsv, kmer_file_fasta):
+
+    with open(kmer_file_tsv, 'r') as hin, open(kmer_file_fasta, 'w') as hout:
+        tind = 0
+        for line in hin:
+            F = line.rstrip('\n').split('\t')
+            print(f'>kmer_{tind}\n{F[0]}', file = hout)
+            tind = tind + 1
+
+
+def check_kmer_size_from_kmer_fasta(kmer_file_fasta):
+
+    tmp_kmer_size = None
+    tind = 0
+    with open(kmer_file_fasta, 'r') as hin:
+        for line in hin:
+            if line.startswith('>'): continue
+            if tmp_kmer_size is not None and tmp_kmer_size != len(line.rstrip('\n')):
+                logger.error("Sizes of rare kmers are inconsistent!")
+                sys.exit(1)
+            tmp_kmer_size = len(line.rstrip('\n'))
+            tind = tind + 1
+            if tind >= 1000: break
+
+    if tmp_kmer_size is None:
+        logger.info("Could not read the rare kmers")
+        sys.exit(1)
+
+    return(tmp_kmer_size)
+
+            
