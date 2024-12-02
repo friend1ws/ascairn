@@ -67,4 +67,5 @@ def check_depth_command(bam_file, output_file, reference, sex_check, threads, ba
             print(f'ChrX region file: {chrX_short_region_file}', file = hout)
             print(f'ChrX coverage: {depth_chrX}', file = hout)
 
-
+    logger.info("Completed.")
+    

@@ -31,16 +31,15 @@ def type_command(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_co
     if output_dir != '' and not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-
+    logger.info("Matching haplotypes")
     if is_single_hap == True:
 
-        logger.info("Matching haplotypes of chr%s" % cen_id)
         match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
             cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4)
     else:
 
-        logger.info("Matching haplotypes of chr%s" % cen_id)
         match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
             cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4)
 
-        
+    logger.info("Completed.")
+ 

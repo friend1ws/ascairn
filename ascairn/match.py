@@ -129,8 +129,8 @@ def calc_posterior_prob_single(PR1, D_count):
 def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
     cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4):
 
-    # max_depth_thres = math.ceil(depth * 3)
-    max_depth_thres = 100
+    max_depth_thres = math.ceil(depth * 3)
+    # max_depth_thres = 100
    
     prob_0 = [nbinom.pmf(x, nbinom_size_0, nbinom_size_0 / (nbinom_size_0 + nbinom_mu_0)) for x in range(max_depth_thres + 1)]
     prob_1 = [nbinom.pmf(x, nbinom_size, nbinom_size / (nbinom_size + 1.0 * nbinom_mu_unit * depth)) for x in range(max_depth_thres + 1)]
@@ -157,8 +157,9 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, clus
     marker_list =  pl.Series(cluster_marker_count_df \
             .filter((pl.col("Marker_num") >= 2) & (pl.col("Hap_minus_marker_num") >= 2)) \
             .with_columns([pl.col("Rel_pos_std").cast(pl.Float64)]) \
-            .filter((pl.col("Rel_pos_mean") > -0.1) & (pl.col("Rel_pos_mean") < 1.1) & (pl.col("Rel_pos_std") < 0.5)) \
             .select("Marker").unique()
+            # .filter((pl.col("Rel_pos_mean") > -0.1) & (pl.col("Rel_pos_mean") < 1.1) & (pl.col("Rel_pos_std") < 0.5)) \
+            # .select("Marker").unique()
         )
 
     cluster_num = cluster_marker_count_df["Cluster"].max()
