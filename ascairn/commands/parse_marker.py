@@ -29,6 +29,8 @@ def parse_marker_command(cen_fasta_list, output_prefix, kmer_size, alpha_satelli
 
     proc_rare_kmer_table(output_prefix + ".rare_kmer.pruned.annot.txt", output_prefix + ".rare_kmer.pruned.annot.long.txt")
 
+    logger.info("Completed.")
+
 
 def gather_kmer(fasta_file, kmer_size): 
 

@@ -4,6 +4,8 @@ import subprocess, sys, os, csv, shutil
 from ascairn.logger import get_logger
 logger = get_logger(__name__)
 
+
+"""
 def is_exists_bam(input_file):
 
     if input_file.startswith("s3://"):
@@ -16,8 +18,22 @@ def is_exists(input_file):
     if not os.path.exists(input_file):
         logger.error("Input not exists: %s" % input_file)
         sys.exit(1)
+"""
 
+def is_exists_bam(input_file):
 
+    logger.info("Checking accessibility of the input BAM file.")
+    try:
+        subprocess.run(["samtools", "view", "-H", input_file], check = True, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
+    except Exception as e:
+        logger.error(
+            "Failed to access the file '%s' using samtools. Please verify the following: "
+            "1) The path of the BAM file is correct, "
+            "2) The BAM file and its index (.bai) are accessible, and "
+            "3) Samtools is properly installed and configured." % input_file
+        )
+        sys.exit(1)
+        
 def is_tool(executable):
 
     from shutil import which
@@ -27,26 +43,24 @@ def is_tool(executable):
 
     return True
 
-
+"""
 def is_configured_aws():
 
     import boto3
     from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
-    """
-    try:
-        session = boto3.Session()
-        credentials = session.get_credentials()
+    # try:
+    #     session = boto3.Session()
+    #     credentials = session.get_credentials()
 
-        if credentials is None:
-            return False
-        if credentials.access_key and credentials.secret_key:
-            return True
-        else:
-            return False
-    except (NoCredentialsError, PartialCredentialsError):
-        return False
-    """
+    #     if credentials is None:
+    #         return False
+    #     if credentials.access_key and credentials.secret_key:
+    #         return True
+    #     else:
+    #         return False
+    # except (NoCredentialsError, PartialCredentialsError):
+    #     return False
 
     try:
         session = boto3.Session()
@@ -87,7 +101,7 @@ def is_exists_s3(bam_object):
     except:
         logger.error("Input not exists: %s: " % bam_object)
         sys.exit(1)
-
+"""
 
 
 
@@ -176,15 +190,18 @@ def count_rare_kmer(bam_file, output_file, cen_region_file, rare_kmer_file, kmer
     tmp_fasta = output_file + ".centromere.fasta"
     tmp_kmer_jf = output_file + ".centromere.rare_kmer.jf"
     tmp_kmer_fa = output_file + ".centromere.rare_kmer.fa"
-    # kmer_count_file = output_prefix + ".kmer_count.txt"
 
+    logger.info("Extracting reads aligned to the target centromere region from the BAM file.")
     subprocess.run(["samtools", "view", "-bh", bam_file, "-L", cen_region_file, "-M", "-@", str(num_threads), "-o", tmp_bam], check=True)
 
+    logger.info("Generating a FASTA format file of extracted reads for Jellyfish execution.")
     with open(tmp_fasta, 'w') as hout:
         subprocess.run(["samtools", "fasta", "-@", str(num_threads), tmp_bam], stdout=hout, stderr=subprocess.DEVNULL, check=True)
 
+    logger.info("Counting rare k-mers using Jellyfish.")
     subprocess.run(["jellyfish", "count", "-s", "100M", "-C", "-m", str(kmer_size), "-t", str(num_threads), "--if", rare_kmer_file, "-o", tmp_kmer_jf, tmp_fasta], check = True) 
         
+    logger.info("Organizing the result of Jellyfish.")
     with open(tmp_kmer_fa, 'w') as hout:
         subprocess.run(["jellyfish", "dump", tmp_kmer_jf], stdout=hout, check=True)
 

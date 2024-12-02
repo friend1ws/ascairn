@@ -40,23 +40,24 @@ def kmer_count_command(bam_file, kmer_file, output_file, reference, threads, cen
     is_make_kmer_file_fasta = False
     if kmer_file is None:
         kmer_file_fasta = importlib.resources.files("ascairn.data").joinpath("rare_kmer_list.fa")
-        logger.info("No kmer_file argument provided. Using the default rare k-mer list file.")
+        logger.info("No `kmer_file` argument provided. Defaulting to the rare k-mer list file.")
     elif kmer_file.endswith(".fa") or kmer_file.endswith(".fasta"):
-        logger.info("Since the kmer_file has a suffix of '.fa' or '.fasta', consider it as FASTA format file.")
+        logger.info("The provided `kmer_file` has a suffix of '.fa' or '.fasta'; treating it as a FASTA format file.")
         kmer_file_fasta = kmer_file
     else:
-        logger.info("Convert the TSV format kmer_file to FASTA format")
+        logger.info("Converting the `kmer_file` from TSV format to FASTA format for Jellyfish execution.")
         convert_tsv_to_fasta(kmer_file, output_file + ".tmp.kmer_list.fa")
         kmer_file_fasta = output_file + ".tmp.kmer_list.fa"
         is_make_kmer_file_fasta = True
 
     kmer_size = check_kmer_size_from_kmer_fasta(kmer_file_fasta)
 
-    logger.info("Counting rare kmer from the BAM file")
+    # logger.info("Initiated rare k-mer counting process from the BAM file.")
     count_rare_kmer(bam_file, output_file, cen_region_file, kmer_file_fasta, kmer_size, threads)
 
     if is_make_kmer_file_fasta:
         os.remove(output_file + ".tmp.kmer_list.fa")
 
+    logger.info("Completed.")
 
 
