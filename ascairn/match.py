@@ -374,7 +374,7 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, clus
     D_LL2.write_csv(output_prefix + ".haplotype.hap_pair.txt", separator = '\t')
 
 
-    hap_info = pl.read_csv(kmer_info_file, separator = '\t', infer_schema_length=50000) \
+    hap_info = pl.read_csv(kmer_info_file, separator = '\t', infer_schema_length = None) \
         .filter(pl.col("Haplotype").is_in([D_LL2[0, "Haplotype1"], D_LL2[0, "Haplotype2"]])) \
         .group_by(["Marker", "Haplotype", "Marker_num"]) \
         .agg([
@@ -485,7 +485,7 @@ def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_fil
     if cluster_haplotype_file is None: return
 
 
-    hap_marker_count_df_2_tmp = pl.read_csv(kmer_info_file, infer_schema_length = 50000, separator = '\t') \
+    hap_marker_count_df_2_tmp = pl.read_csv(kmer_info_file, infer_schema_length = None, separator = '\t') \
         .select("Marker", "Haplotype") \
         .group_by("Marker", "Haplotype") \
         .agg(pl.len().alias("Count"))
