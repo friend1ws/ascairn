@@ -411,8 +411,8 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, clus
 def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
     cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4):
 
-    # max_depth_thres = math.ceil(depth * 1.5) 
-    max_depth_thres = 200
+    max_depth_thres = math.ceil(depth * 1.5 * 0.5) 
+    # max_depth_thres = 200
 
     prob_0 = [nbinom.pmf(x, nbinom_size_0, nbinom_size_0 / (nbinom_size_0 + nbinom_mu_0)) for x in range(max_depth_thres + 1)]
     prob_1 = [nbinom.pmf(x, nbinom_size, nbinom_size / (nbinom_size + 1.0 * nbinom_mu_unit * depth)) for x in range(max_depth_thres + 1)]
