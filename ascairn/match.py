@@ -3,6 +3,7 @@
 import math
 from scipy.stats import nbinom
 import polars as pl
+import numpy as np
 
 
 def calc_loglikelihood(PR1, PR2, D_count, marker_list):
@@ -126,8 +127,103 @@ def calc_posterior_prob_single(PR1, D_count):
 
     return(PR1_count)
 
+
+def generate_samples(probability_matrix, num_samples):
+    """
+    Generate samples based on a given probability matrix.
+
+    Parameters:
+        probability_matrix (numpy.ndarray):
+            A 2D array where each row contains probabilities for categories.
+        num_samples (int):
+            Number of samples to generate per row.
+
+    Returns:
+        numpy.ndarray:
+            A 2D array where each column contains the generated samples for one row.
+    """
+    # Define category labels based on the number of columns in the probability matrix
+    categories = np.arange(probability_matrix.shape[1])
+
+    # Preallocate memory for the samples
+    num_rows = probability_matrix.shape[0]
+    samples = np.empty((num_samples, num_rows), dtype=int)
+
+    # Generate samples for each row in the probability matrix
+    for i, probs in enumerate(probability_matrix):
+        # Compute cumulative probabilities
+        cumulative_probs = np.cumsum(probs)
+
+        # Generate uniform random numbers
+        random_uniform = np.random.uniform(0, 1, num_samples)
+
+        # Use vectorized operations to assign categories based on random uniform values
+        indices = np.searchsorted(cumulative_probs, random_uniform, side="right")
+        samples[:, i] = categories[indices]
+
+    return samples  # No need to transpose as preallocation ensures correct shape
+
+
+
+def estimage_cosine_dist(probability_matrix, hap1_vec, hap2_vec, num_samples = 1000):
+
+    target_columns = ["Prob_00", "Prob_01", "Prob_10", "Prob_11", "Prob_02", "Prob_20", "Prob_12", "Prob_21", "Prob_22"]
+    column_indeces = [probability_matrix.columns.index(col) for col in target_columns]
+
+    probability_matrix_np = probability_matrix.to_numpy()
+    # Ensure the probabilities are normalized
+    probability_matrix_np = probability_matrix_np / probability_matrix_np.sum(axis=1, keepdims=True)
+
+    # Generate samples
+    pD_samples = generate_samples(probability_matrix_np, num_samples)
+
+    hap1_samples = (pD_samples == column_indeces[2]).astype(int) + \
+               (pD_samples == column_indeces[3]).astype(int) + \
+               (pD_samples == column_indeces[6]).astype(int) + \
+               2 * (pD_samples == column_indeces[5]).astype(int) + \
+               2 * (pD_samples == column_indeces[7]).astype(int) + \
+               2 * (pD_samples == column_indeces[8]).astype(int)
+
+    hap2_samples = (pD_samples == column_indeces[1]).astype(int) + \
+               (pD_samples == column_indeces[3]).astype(int) + \
+               (pD_samples == column_indeces[7]).astype(int) + \
+               2 * (pD_samples == column_indeces[4]).astype(int) + \
+               2 * (pD_samples == column_indeces[6]).astype(int) + \
+               2 * (pD_samples == column_indeces[8]).astype(int)
+
+
+    # Compute cosine distances
+    cos_dist1 = np.mean(1 - (hap1_samples @ hap1_vec) / (np.sqrt(np.sum(hap1_samples**2, axis=1)) * np.sqrt(np.sum(hap1_vec**2))))
+    cos_dist2 = np.mean(1 - (hap2_samples @ hap2_vec) / (np.sqrt(np.sum(hap2_samples**2, axis=1)) * np.sqrt(np.sum(hap2_vec**2))))
+
+    # Print cosine distances
+    return(round(cos_dist1, 8), round(cos_dist2, 8))
+
+
+def estimage_cosine_dist_single(probability_matrix, hap1_vec, num_samples = 1000):
+
+    target_columns = ["Prob_0", "Prob_1", "Prob_2"]
+    column_indeces = [probability_matrix.columns.index(col) for col in target_columns]
+
+    probability_matrix_np = probability_matrix.to_numpy()
+    # Ensure the probabilities are normalized
+    probability_matrix_np = probability_matrix_np / probability_matrix_np.sum(axis=1, keepdims=True)
+
+    # Generate samples
+    pD_samples = generate_samples(probability_matrix_np, num_samples)
+
+    hap1_samples = (pD_samples == column_indeces[1]).astype(int) + \
+               2 * (pD_samples == column_indeces[2]).astype(int)
+
+    # Compute cosine distances
+    cos_dist1 = np.mean(1 - (hap1_samples @ hap1_vec) / (np.sqrt(np.sum(hap1_samples**2, axis=1)) * np.sqrt(np.sum(hap1_vec**2))))
+
+    # Print cosine distances
+    return(round(cos_dist1, 8))
+
+
 def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
-    cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4):
+    cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4):
 
     max_depth_thres = math.ceil(depth * 3)
     # max_depth_thres = 100
@@ -406,12 +502,25 @@ def match_cluster_haplotype(kmer_count_file, output_prefix, kmer_info_file, clus
     # PR2_max.write_csv("PR2_max_hap.tsv", separator = '\t')
     PR12_count.write_csv(output_prefix + ".haplotype.marker_prob.txt", separator = '\t')
 
+    prob_mat = PR12_count.select(["Prob_00", "Prob_01", "Prob_10", "Prob_11", "Prob_02", "Prob_20", "Prob_12", "Prob_21", "Prob_22"]) # .to_numpy()
+
+    # Create hap1_vec and hap2_vec examples
+    hap1_vec = PR12_count.select(["Marker_count1"]).to_numpy().flatten()
+    hap1_vec = np.where(hap1_vec == 'NA', 0, hap1_vec).astype(float)
+    hap2_vec = PR12_count.select(["Marker_count2"]).to_numpy().flatten()
+    hap2_vec = np.where(hap2_vec == 'NA', 0, hap2_vec).astype(float)
+    
+    cdist1, cdist2 = estimage_cosine_dist(prob_mat, hap1_vec, hap2_vec)
+
+    with open(output_prefix + ".haplotype.cosine_dist.txt", 'w') as hout:
+        print("Cosine_dist1\tCosine_dist2", file = hout)
+        print(f'{cdist1}\t{cdist2}', file = hout)
 
 
 def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_file, cluster_kmer_count_file, depth,
-    cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 0.1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4):
+    cluster_haplotype_file, cluster_ratio = 0.1, pseudo_count = 1, nbinom_size_0 = 0.5, nbinom_size = 8, nbinom_mu_0 = 0.8, nbinom_mu_unit = 0.4):
 
-    max_depth_thres = math.ceil(depth * 1.5 * 0.5) 
+    max_depth_thres = math.ceil(depth * 1.5) 
     # max_depth_thres = 200
 
     prob_0 = [nbinom.pmf(x, nbinom_size_0, nbinom_size_0 / (nbinom_size_0 + nbinom_mu_0)) for x in range(max_depth_thres + 1)]
@@ -604,10 +713,27 @@ def match_cluster_haplotype_single(kmer_count_file, output_prefix, kmer_info_fil
         .select(["Marker", pl.col("Haplotype1").fill_null("NA"), pl.col("Mean_marker_pos1").fill_null("NA"), pl.col("Marker_count1").fill_null("NA"),
                  "Prob_0", "Prob_1", "Prob_2"])
 
+    # for debug
+    # PR1_max.write_csv("PR1_max.tsv", separator = '\t')
+    # D_count.write_csv("D_count.tsv", separator = '\t')
+
     # PR1_max.join(PR2_max, on="Marker", suffix = "_PR2").write_csv("PR12_max.tsv", separator = '\t')
     # PR1_max.write_csv("PR1_max_hap.tsv", separator = '\t')
     # PR2_max.write_csv("PR2_max_hap.tsv", separator = '\t')
     PR1_count.write_csv(output_prefix + ".haplotype.marker_prob.txt", separator = '\t')
+
+
+    prob_mat = PR1_count.select(["Prob_0", "Prob_1", "Prob_2"])
+
+    hap1_vec = PR1_count.select(["Marker_count1"]).to_numpy().flatten()
+    hap1_vec = np.where(hap1_vec == 'NA', 0, hap1_vec).astype(float)
+
+    cdist1 = estimage_cosine_dist_single(prob_mat, hap1_vec)
+
+    with open(output_prefix + ".haplotype.cosine_dist.txt", 'w') as hout:
+        print("Cosine_dist", file = hout)
+        print(f'{cdist1}', file = hout)
+
 
 
 if __name__ == "__main__":
