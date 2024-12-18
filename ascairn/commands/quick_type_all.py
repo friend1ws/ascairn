@@ -75,8 +75,9 @@ def quick_type_all_command(bam_file, output_prefix, reference, sex, threads, bas
             logger.info("Sex has been set to female")
             sex = "female"
 
-    logger.info("Parsing rare kmer from the BAM file")
-    gather_rare_kmer(bam_file, output_prefix, cen_region_file, rare_kmer_file, kmer_size = 27, num_threads = threads)
+    # logger.info("Parsing rare kmer from the BAM file")
+    # gather_rare_kmer(bam_file, output_prefix, cen_region_file, rare_kmer_file, kmer_size = 27, num_threads = threads)
+    count_rare_kmer(bam_file, output_prefix + ".kmer_count.txt", cen_region_file, kmer_file_fasta, kmer_size, threads)
 
     # depth = 41.0
     for cen_id in [str(x) for x in range(1, 23)] + ["X"]:  
