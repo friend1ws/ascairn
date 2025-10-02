@@ -1,19 +1,34 @@
 #! /bin/bash
 
-set -xe
+set -e
 
-if [ $# -lt 3 ] || [ $# -gt 4 ]; then
-    echo "Usage: $0 <BAM_FILE> <OUTPUT_PREFIX> <DATA_DIR> [THREAD_NUM]"
+if [ $# -lt 4 ] || [ $# -gt 5 ]; then
+    echo "Usage: $0 <BAM_FILE> <OUTPUT_PREFIX> <DATA_DIR> <REFERENCE: hg38|chm13> [THREAD_NUM]"
+    echo ""
+    echo "Arguments:"
+    echo "  BAM_FILE        Input BAM file"
+    echo "  OUTPUT_PREFIX   Prefix for output files"
+    echo "  DATA_DIR        Directory containing resource files"
+    echo "  REFERENCE       Reference genome build (must be 'hg38' or 'chm13')"
+    echo "  THREAD_NUM      Number of threads (optional, default=8)"
+    exit 1
+
     exit 1
 fi
 
 BAM_FILE="$1"
 OUTPUT_PREFIX="$2"
 DATA_DIR="$3"
-THREAD_NUM="${4:-8}"
+REFERENCE="$4"
+THREAD_NUM="${5:-8}"
 
 export POLARS_MAX_THREADS="${THREAD_NUM}"
 
+
+if [ "$REFERENCE" != "hg38" ] && [ "$REFERENCE" != "chm13" ]; then
+    echo "Error: REFERENCE must be either 'hg38' or 'chm13'."
+    exit 1
+fi
 
 OUTPUT_DIR="$(dirname "${OUTPUT_PREFIX}")"
 if [ ! -d "${OUTPUT_DIR}" ]
@@ -26,16 +41,16 @@ fi
 ##########
 ascairn check_depth \
     "${BAM_FILE}" \
-    "${DATA_DIR}/chr22_long_arm_hg38.bed" \
+    "${DATA_DIR}/chr22_long_arm_${REFERENCE}.bed" \
     "${OUTPUT_PREFIX}.depth.txt" \
-    --x_region_file "${DATA_DIR}/chrX_short_arm_hg38.bed" \
+    --x_region_file "${DATA_DIR}/chrX_short_arm_${REFERENCE}.bed" \
     --threads "${THREAD_NUM}"
 
 
 ascairn kmer_count \
     "${BAM_FILE}" \
     "${DATA_DIR}/rare_kmer_list.fa" \
-    "${DATA_DIR}/cen_region_curated_margin_hg38.bed" \
+    "${DATA_DIR}/cen_region_curated_margin_${REFERENCE}.bed" \
     "${OUTPUT_PREFIX}.kmer_count.txt" \
     --threads "${THREAD_NUM}"
 
