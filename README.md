@@ -4,9 +4,15 @@
 </div>
 
 # ascairn
-Centromere sequence analysis using rare k-mer markers
+It has become clear that centromere sequences, especially alpha satellite sequences, exhibit considerable variation.
+We have demonstrated that centromeres can be classified using rarely observed k-mers (Sugawa et al., in preparation).
+`ascairn` (alpha-satellite cairn) is software designed to perform various analyses, including estimating centromere variation from short-read data by utilizing rare k-mers within centromere sequences
 
-# Dependency
+<div align="center">
+  <img src="image/categorization_overview.png" alt="Overview of centromere classification using rare k-mer" width="750">
+</div>
+
+# Prerequisites
 ## Software
 - [samtools](https://github.com/samtools/samtools)
 - [Jellyfish](https://github.com/gmarcais/Jellyfish)
@@ -18,36 +24,31 @@ Centromere sequence analysis using rare k-mer markers
   
 # Installation
 
-1. Install all prerequisite software and ensure they are accessible by adding their locations to your `PATH`.
+1. Install prerequisite software and ensure they are accessible via your `PATH`.
 
 2. Install `ascairn`.
-```
+```bash
 git clone https://github.com/friend1ws/ascairn.git
 cd ascairn
-pip install . [--user]
+pip install .   # or pip install -e . for development
 ```
-> Note: The `--user` option is optional and can be used if you don't have administrative rights or if you prefer installing packages locally.
 
 3. Download ascairn resource files.
-```
+```bash
 git clone https://github.com/friend1ws/ascairn_resource.git
+```
+
+After installation, your directory structure may look like this:
+```
+ascairn/
+ascairn_resource/
 ```
 
 # Mini-Tutorial
 
-This mini-tutorial demonstrates how to execute a standard workflow using the `ascairn_type_allchr.sh` script. 
+This mini-tutorial demonstrates how to execute a standard workflow using `ascairn_type_allchr.sh`. 
 This tutorial can be easily extended to any sequence data aligned to the GRCh38 reference genome.
 
-## Workflow 
-- `check_depth`　
-  - Checks sequence coverage focusing on a reference region (long arm of chromosome 22)
-  - Determines biological sex by assessing the coverage within a specified region of chromosome X (restricted here to the short arm), relative to the reference region.
-
-- `kmer_count` 
-  - Extracts reads aligned to alpha satellite regions and counts occurrences of predefined rare k-mers.
-
-- `type`
-  - Identifies centromeric cluster pairs and the closest haplotype pairs for chromosomes 1–22 and chromosome X.
 
 ## Procedure
 
@@ -74,18 +75,45 @@ wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai 
 ### 2. Execute the `ascairn_type_allchr.sh` script
 Run the following command (runtime: approximately 20–30 minutes):
 ```
-bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_resource/ver_2024-12-06 8
+bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_resource/resource/ver_2024-12-06 8
 ```
 
 **Argument Descriptions:**
-- **First argument**: Path to BAM or CRAM file.
-- **Second argument**: Output path prefix.
-- **Third argument**: Path to the ascairn resource data.
-- **Fourth argument**: Number of threads to use (optional, default: 8).
+
+| Argument         | Description                                  | Default |
+|------------------|----------------------------------------------|---------|
+| First argument   | Path to BAM or CRAM file                     | —       |
+| Second argument  | Output path prefix                           | —       |
+| Third argument   | Path to the ascairn resource data            | —       |
+| Fourth argument  | Number of threads to use                     | 8       |
+
 
 **Result**
 After successful execution, you will find the output file at:
 ```
 output/NA12877.cen_type.result.txt
+```
+
+## Inside the workflow 
+
+- `check_depth`　
+  - Checks sequence coverage focusing on a reference region (long arm of chromosome 22)
+  - Determines biological sex by assessing the coverage within a specified region of chromosome X (restricted here to the short arm), relative to the reference region.
+
+```
+ascairn check_depth seq_data/NA12877.final.cram ascairn_resource/resource/ver_2024-12-06/chr22_long_arm_hg38.bed output/NA12877.depth.txt --x_region_file /home/yuishira/bin/ascairn_resource/resource/ver_2024-12-06/chrX_short_arm_hg38.bed --threads 8
+```
+
+- `kmer_count` 
+  - Extracts reads aligned to alpha satellite regions and counts occurrences of predefined rare k-mers.
+ 
+```
+ascairn kmer_count seq_data/NA12877.final.cram ascairn_resource/resource/ver_2024-12-06/rare_kmer_list.fa ascairn_resource/resource/ver_2024-12-06/cen_region_curated_margin_hg38.bed output/NA12877.kmer_count.txt --threads 8
+```
+
+- `type`
+  - Identifies centromeric cluster pairs and the closest haplotype pairs for chromosomes 1–22 and chromosome X.
+
+```
 ```
 
