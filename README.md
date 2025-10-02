@@ -20,6 +20,8 @@ We have demonstrated that centromeres can be classified using rarely observed k-
 
 ## Python
 - click
+- scipy 
+- polars
 - boto3 (required only for accessing CRAM files in Amazon S3)
   
 # Installation
