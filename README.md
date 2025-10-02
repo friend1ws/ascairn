@@ -54,7 +54,7 @@ This tutorial can be easily extended to any sequence data aligned to the GRCh38 
 
 ### 1. Prepare the sequence data
 
-Download a sequence data (aligned to the GRCh38 reference genome) using one of the following methods:
+Download sequence data (aligned to the GRCh38 reference genome) using one of the following methods:
 
 **Option 1: AWS S3 (recommended for faster downloads)**
 ```
@@ -73,23 +73,28 @@ wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai 
 
 
 ### 2. Execute the `ascairn_type_allchr.sh` script
+
 Run the following command (runtime: approximately 20–30 minutes):
 ```
-bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_resource/resource/ver_2024-12-06 8
+bash ascairn_type_allchr.sh seq_data/NA12877.final.cram output/NA12877 ascairn_resource/resource/ver_2024-12-06 hg38 8
 ```
 
-**Argument Descriptions:**
+**Argument descriptions:**
 
-| Argument         | Description                                  | Default |
-|------------------|----------------------------------------------|---------|
-| First argument   | Path to BAM or CRAM file                     | —       |
-| Second argument  | Output path prefix                           | —       |
-| Third argument   | Path to the ascairn resource data            | —       |
-| Fourth argument  | Number of threads to use                     | 8       |
+```
+ ascairn_type_allchr2.sh <BAM_FILE> <OUTPUT_PREFIX> <DATA_DIR> <REFERENCE: hg38|chm13> [THREAD_NUM]
+```
+
+| Argument         | Description                                    | Default |
+|------------------|------------------------------------------------|---------|
+| First argument   | Path to BAM or CRAM file                       | —       |
+| Second argument  | Output path prefix                             | —       |
+| Third argument   | Reference genome for BAM file (hg38 or chm13)  | —       |
+| Fourth argument  | Number of threads to use                       | 8       |
 
 
 **Result**
-After successful execution, you will find the output file at:
+After successful execution, the output file will be generated at:
 ```
 output/NA12877.cen_type.result.txt
 ```
@@ -97,23 +102,50 @@ output/NA12877.cen_type.result.txt
 ## Inside the workflow 
 
 - `check_depth`　
-  - Checks sequence coverage focusing on a reference region (long arm of chromosome 22)
-  - Determines biological sex by assessing the coverage within a specified region of chromosome X (restricted here to the short arm), relative to the reference region.
+  - Check sequence coverage in a reference region (chr22 long arm).
+  - Determine biological sex by comparing coverage in chrX (short arm) to the reference region.
+  - Assumes the BAM/CRAM is aligned to hg38 (or chm13 with matching BEDs).
 
-```
-ascairn check_depth seq_data/NA12877.final.cram ascairn_resource/resource/ver_2024-12-06/chr22_long_arm_hg38.bed output/NA12877.depth.txt --x_region_file /home/yuishira/bin/ascairn_resource/resource/ver_2024-12-06/chrX_short_arm_hg38.bed --threads 8
+```bash
+ascairn check_depth　\
+  seq_data/NA12877.final.cram　\
+  ascairn_resource/resource/ver_2024-12-06/chr22_long_arm_hg38.bed output/NA12877.depth.txt　\
+  --x_region_file /home/yuishira/bin/ascairn_resource/resource/ver_2024-12-06/chrX_short_arm_hg38.bed　\
+  --threads 8
+# output: coverage stats (including genome-wide mean, chr22 ref region, chrX short arm)
 ```
 
 - `kmer_count` 
   - Extracts reads aligned to alpha satellite regions and counts occurrences of predefined rare k-mers.
+  - Assumes the BAM/CRAM is aligned to hg38 (or chm13 with matching BEDs).
  
-```
-ascairn kmer_count seq_data/NA12877.final.cram ascairn_resource/resource/ver_2024-12-06/rare_kmer_list.fa ascairn_resource/resource/ver_2024-12-06/cen_region_curated_margin_hg38.bed output/NA12877.kmer_count.txt --threads 8
+```bash
+ascairn kmer_count　\
+  seq_data/NA12877.final.cram　\
+  ascairn_resource/resource/ver_2024-12-06/rare_kmer_list.fa　\
+  ascairn_resource/resource/ver_2024-12-06/cen_region_curated_margin_hg38.bed　\
+  output/NA12877.kmer_count.txt　\
+  --threads 8
+# output: per-k-mer counts
 ```
 
 - `type`
-  - Identifies centromeric cluster pairs and the closest haplotype pairs for chromosomes 1–22 and chromosome X.
+  - Identify centromeric cluster pairs and nearest haplotype pairs for chr1–22 and chrX.
 
-```
+```bash
+COV=37.24   # from `ascairn check_depth`
+
+for CHR_IND in $(seq 1 22) X
+do
+  ascairn cen_type　\
+    output/NA12877.kmer_count.txt \
+    output/NA12877.chr${CHR_IND} \
+    ascairn_resource/resource/ver_2024-12-06/kmer_info/chr${CHR_IND}.kmer_info.txt.gz \
+    ascairn_resource/resource/ver_2024-12-06/cluster_m3/chr${CHR_IND}.cluster_marker_count.txt.gz \
+    ${COV}　\
+    --cluster_haplotype_file ascairn_resource/resource/ver_2024-12-06/cluster_m3/chr${CHR_IND}.hap_cluster.txt
+done
+# output: per-chromosome typing results
+# add --is_single_hap option for male
 ```
 
