@@ -81,17 +81,24 @@ ascairn_resource/
 
 ### 1. Prepare the sequence data
 
-Download sequence data (aligned to the GRCh38 reference genome) using one of the following methods:
+We use NA12877 from the 1000 Genomes Project, whose GRCh38-aligned CRAM is publicly available on AWS S3 and FTP.
 
-**Option 1: AWS S3 (recommended for faster downloads)**
+**Option 1: Direct S3 path (no download required)**
+
+If samtools is properly installed with S3 support, ascairn can read CRAM files directly from S3 without downloading. The file is:
 ```
-aws s3 cp s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram seq_data/
-aws s3 cp s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram.crai seq_data/
+s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram
 ```
 
-> If you have direct access to AWS S3 BAM or CRAM files and SAMtools is properly installed, you can skip downloading the files locally. Instead, directly specify the S3 path in subsequent steps.
+**Option 2: Download locally**
 
-**Option 2: FTP**
+Either via AWS CLI (public access, no AWS credentials required):
+```
+aws s3 cp --no-sign-request s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram seq_data/
+aws s3 cp --no-sign-request s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram.crai seq_data/
+```
+
+Or via FTP:
 ```
 wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram -P seq_data/
 wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai -P seq_data/
@@ -99,8 +106,19 @@ wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR398/ERR3989340/NA12877.final.cram.crai 
 
 ### 2. Run the workflow
 
-The simplest way to run ascairn is via `type_all`, which executes all steps (`check_depth`, `kmer_count`, `cen_type`) for chr1-22 and chrX in a single command:
+The simplest way to run ascairn is via `type_all`, which executes all steps (`check_depth`, `kmer_count`, `cen_type`) for chr1-22 and chrX in a single command.
 
+**Using Option 1 (direct S3 path):**
+```bash
+ascairn type_all \
+    s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/ERR3989340/NA12877.final.cram \
+    -o output/NA12877 \
+    --resource_dir ascairn_resource/resource/panel/ascairn_paper_2025 \
+    --reference hg38 \
+    -t 8
+```
+
+**Using Option 2 (downloaded CRAM):**
 ```bash
 ascairn type_all \
     seq_data/NA12877.final.cram \
@@ -123,6 +141,39 @@ output/NA12877.cen_type.result.txt
 ```
 
 See [Output Format](#output-format) for how to interpret the results.
+
+### Running with CHM13-aligned data
+
+For users with CHM13-aligned data, here is an equivalent example using NA12878, whose CHM13-aligned CRAM is publicly available at the DDBJ mirror.
+
+**Option 1: Direct HTTPS URL (no download required)**
+
+If samtools is properly installed with libcurl support, ascairn can read CRAM files directly from HTTPS URLs:
+
+```bash
+ascairn type_all \
+    https://ddbj.nig.ac.jp/public/public-human-genomes/CHM13/1000Genomes/CRAM/NA12878/NA12878.cram \
+    -o output/NA12878 \
+    --resource_dir ascairn_resource/resource/panel/ascairn_paper_2025 \
+    --reference chm13 \
+    -t 8
+```
+
+**Option 2: Download locally**
+
+```
+wget https://ddbj.nig.ac.jp/public/public-human-genomes/CHM13/1000Genomes/CRAM/NA12878/NA12878.cram -P seq_data/
+wget https://ddbj.nig.ac.jp/public/public-human-genomes/CHM13/1000Genomes/CRAM/NA12878/NA12878.cram.crai -P seq_data/
+
+ascairn type_all \
+    seq_data/NA12878.cram \
+    -o output/NA12878 \
+    --resource_dir ascairn_resource/resource/panel/ascairn_paper_2025 \
+    --reference chm13 \
+    -t 8
+```
+
+The only differences from the GRCh38 workflow are (i) the input CRAM aligned to CHM13 and (ii) `--reference chm13` in the command.
 
 ## Commands
 
@@ -244,6 +295,26 @@ These files list all candidate pairs ranked by log-likelihood (higher = better f
 | Cluster1 / Haplotype1 | First member of the pair |
 | Cluster2 / Haplotype2 | Second member of the pair |
 | Loglikelihood | Log-likelihood of the pair given the observed k-mer counts |
+
+## Performance
+
+We evaluated ascairn using leave-one-individual-out cross-validation on the reference panel: for each individual, both parental aHOR-haps were removed from the panel, and the resulting model was used to infer the haplogroup pair from the individual's short-read WGS data. To assess robustness to sequencing depth, each sample was downsampled to 1–30x coverage.
+
+The figures below show haplogroup pair assignment accuracy (precision) for each chromosome at various downsampled coverages, for short-read WGS data aligned to GRCh38 (upper) and CHM13 v2.0 (lower):
+
+**GRCh38-aligned data:**
+
+<div align="center">
+  <img src="image/cluster_match_hg38.png" alt="Accuracy on GRCh38-aligned data" width="750">
+</div>
+
+**CHM13-aligned data:**
+
+<div align="center">
+  <img src="image/cluster_match_chm13.png" alt="Accuracy on CHM13-aligned data" width="750">
+</div>
+
+Accuracy is generally high (>90%) for most chromosomes at coverage ≥ 5x, with comparable performance between GRCh38- and CHM13-aligned data. See [Shiraishi et al., bioRxiv, 2025](https://doi.org/10.1101/2025.07.26.666712) for details.
 
 ## Notes
 
