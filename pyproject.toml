@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,7 @@ name = "ascairn"
 version = "0.1.0b6"
 description = "Analyze centromere variation from short-read data using rare k-mers in alpha satellite sequences"
 readme = "README.md"
-license = "GPL-3.0-only"
+license = { text = "GPL-3.0-only" }
 requires-python = ">=3.9"
 authors = [
     { name = "Yuichi Shiraishi", email = "friend1ws@gmail.com" },
@@ -19,8 +19,6 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
-urls.Homepage = "https://github.com/friend1ws/ascairn"
-urls.Repository = "https://github.com/friend1ws/ascairn"
 
 dependencies = [
     "click",
@@ -28,6 +26,10 @@ dependencies = [
     "polars",
     "numpy",
 ]
+
+[project.urls]
+Homepage = "https://github.com/friend1ws/ascairn"
+Repository = "https://github.com/friend1ws/ascairn"
 
 [project.optional-dependencies]
 s3 = ["boto3"]
