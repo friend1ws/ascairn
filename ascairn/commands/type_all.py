@@ -23,7 +23,9 @@ def read_sex_from_depth_file(depth_file):
 @click.option("--reference", required=True, type=click.Choice(["hg38", "chm13"]),
               help="Reference genome build for the BAM file.")
 @click.option("-t", "--threads", default=8, help="Number of threads to use.")
-def type_all_command(bam_file, output_prefix, resource_dir, reference, threads):
+@click.option("--debug", is_flag=True, default=False,
+              help="Keep per-chromosome intermediate files (cen_type.txt, cluster/haplotype tables).")
+def type_all_command(bam_file, output_prefix, resource_dir, reference, threads, debug):
     """Run the full ascairn workflow (check_depth, kmer_count, cen_type for all chromosomes)."""
 
     os.environ["POLARS_MAX_THREADS"] = str(threads)
@@ -104,5 +106,13 @@ def type_all_command(bam_file, output_prefix, resource_dir, reference, threads):
                 f_in.readline()  # skip header
                 data = f_in.readline().rstrip('\n')
                 f_out.write(f"chr{chrom}\t{data}\n")
+
+        # Remove per-chromosome intermediate files unless --debug is set
+        if not debug:
+            for suffix in ("cen_type.txt", "cluster.hap_pair.txt", "cluster.marker_prob.txt",
+                           "haplotype.hap_pair.txt", "haplotype.marker_prob.txt"):
+                path = f"{chr_prefix}.{suffix}"
+                if os.path.exists(path):
+                    os.remove(path)
 
     logger.info(f"Completed. Results written to {output_prefix}.cen_type_all.txt")
