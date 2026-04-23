@@ -84,9 +84,9 @@ def type_all_command(bam_file, output_prefix, resource_dir, reference, threads):
 
         subprocess.run(cmd, check=True)
 
-        # Aggregate per-chromosome result.txt
-        result_file = f"{output_prefix}.cen_type.result.txt"
-        chr_result = f"{chr_prefix}.result.txt"
+        # Aggregate per-chromosome cen_type.txt
+        result_file = f"{output_prefix}.cen_type_all.txt"
+        chr_result = f"{chr_prefix}.cen_type.txt"
 
         if first_chr:
             with open(chr_result) as f_in, open(result_file, 'w') as f_out:
@@ -101,4 +101,4 @@ def type_all_command(bam_file, output_prefix, resource_dir, reference, threads):
                 data = f_in.readline().rstrip('\n')
                 f_out.write(f"chr{chrom}\t{data}\n")
 
-    logger.info(f"Completed. Results written to {output_prefix}.cen_type.result.txt")
+    logger.info(f"Completed. Results written to {output_prefix}.cen_type_all.txt")

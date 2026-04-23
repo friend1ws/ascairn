@@ -34,7 +34,7 @@ def test_cen_type(chrom, is_single_hap, panel_dir, output_dir, expected_dir):
 
     subprocess.run(cmd, check=True, env=os.environ)
 
-    output_file = f"{output_prefix}.result.txt"
-    expected_file = os.path.join(expected_dir, f"NA12877.chr{chrom}.result.txt")
+    output_file = f"{output_prefix}.cen_type.txt"
+    expected_file = os.path.join(expected_dir, f"NA12877.chr{chrom}.cen_type.txt")
     assert os.path.exists(output_file), f"Output file not found: {output_file}"
-    assert filecmp.cmp(output_file, expected_file, shallow=False), "Mismatch: result.txt"
+    assert filecmp.cmp(output_file, expected_file, shallow=False), "Mismatch: cen_type.txt"

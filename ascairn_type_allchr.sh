@@ -76,15 +76,15 @@ do
 
     ${commands[@]}
 
-    # Aggregate per-chromosome result.txt into a single file
+    # Aggregate per-chromosome cen_type.txt into a single file
     if [ $FIRST_CHR -eq 1 ]
     then
-        echo -ne "Chr\t" > ${OUTPUT_PREFIX}.cen_type.result.txt
-        head -n1 ${OUTPUT_PREFIX}.chr${CHR_IND}.result.txt >> ${OUTPUT_PREFIX}.cen_type.result.txt
+        echo -ne "Chr\t" > ${OUTPUT_PREFIX}.cen_type_all.txt
+        head -n1 ${OUTPUT_PREFIX}.chr${CHR_IND}.cen_type.txt >> ${OUTPUT_PREFIX}.cen_type_all.txt
         FIRST_CHR=0
     fi
-    echo -ne "chr${CHR_IND}\t" >> ${OUTPUT_PREFIX}.cen_type.result.txt
-    tail -n1 ${OUTPUT_PREFIX}.chr${CHR_IND}.result.txt >> ${OUTPUT_PREFIX}.cen_type.result.txt
+    echo -ne "chr${CHR_IND}\t" >> ${OUTPUT_PREFIX}.cen_type_all.txt
+    tail -n1 ${OUTPUT_PREFIX}.chr${CHR_IND}.cen_type.txt >> ${OUTPUT_PREFIX}.cen_type_all.txt
 
 done
 
