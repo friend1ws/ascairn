@@ -1,2 +1,0 @@
-Cluster_1	Cluster_2	Haplotype_1	Haplotype_2	Contig_len_1	Contig_len_2
-3	NA	NA12329.pat	NA	4467852	NA
