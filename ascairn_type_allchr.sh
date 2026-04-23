@@ -57,8 +57,14 @@ SEX="$(grep Sex ${OUTPUT_PREFIX}.depth.txt | cut -d ' ' -f 2)"
 
 FIRST_CHR=1
 
-for CHR_IND in `seq 1 22` X
+for CHR_IND in `seq 1 22` X Y
 do
+
+    # chrY only exists in males
+    if [ $CHR_IND = "Y" -a $SEX != "male" ]
+    then
+        continue
+    fi
 
     commands=(
         "ascairn" "cen_type" \
@@ -69,7 +75,7 @@ do
         "--depth_file" "${OUTPUT_PREFIX}.depth.txt"
     )
 
-    if [ $CHR_IND = "X" -a $SEX = "male" ]
+    if [ \( $CHR_IND = "X" -o $CHR_IND = "Y" \) -a $SEX = "male" ]
     then
         commands+=("--single_hap")
     fi

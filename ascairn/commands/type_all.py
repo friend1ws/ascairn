@@ -64,10 +64,14 @@ def type_all_command(bam_file, output_prefix, resource_dir, reference, threads):
     sex = read_sex_from_depth_file(depth_file)
 
     # Step 3: cen_type for each chromosome
-    chromosomes = [str(i) for i in range(1, 23)] + ["X"]
+    chromosomes = [str(i) for i in range(1, 23)] + ["X", "Y"]
     first_chr = True
 
     for chrom in chromosomes:
+        # chrY only exists in males
+        if chrom == "Y" and sex != "male":
+            continue
+
         chr_prefix = f"{output_prefix}.chr{chrom}"
         logger.info(f"Step 3: Running cen_type for chr{chrom}")
 
@@ -79,7 +83,7 @@ def type_all_command(bam_file, output_prefix, resource_dir, reference, threads):
             "--hap_info", os.path.join(resource_dir, "hap_info", f"chr{chrom}.hap_info.txt"),
             "--depth_file", depth_file,
         ]
-        if chrom == "X" and sex == "male":
+        if chrom in ("X", "Y") and sex == "male":
             cmd.append("--single_hap")
 
         subprocess.run(cmd, check=True)
