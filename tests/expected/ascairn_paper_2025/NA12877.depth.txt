@@ -1,0 +1,5 @@
+Coverage: 37.24
+Baseline region file: tests/ascairn_resource/resource/common/chr22_long_arm_hg38.bed
+Sex: male
+ChrX region file: tests/ascairn_resource/resource/common/chrX_short_arm_hg38.bed
+ChrX coverage: 18.0

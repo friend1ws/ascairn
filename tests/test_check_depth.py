@@ -12,7 +12,7 @@ def compare_depth_values(output_file, expected_file):
     return out_lines == exp_lines
 
 
-def test_check_depth(s3_cram, resource_dir, output_dir, expected_dir):
+def test_check_depth(s3_cram, common_dir, output_dir, expected_dir):
     output_file = os.path.join(output_dir, "NA12877.depth.txt")
     expected_file = os.path.join(expected_dir, "NA12877.depth.txt")
 
@@ -21,8 +21,8 @@ def test_check_depth(s3_cram, resource_dir, output_dir, expected_dir):
             "ascairn", "check_depth",
             s3_cram,
             "-o", output_file,
-            "--baseline_region", os.path.join(resource_dir, "chr22_long_arm_hg38.bed"),
-            "--x_region", os.path.join(resource_dir, "chrX_short_arm_hg38.bed"),
+            "--baseline_region", os.path.join(common_dir, "chr22_long_arm_hg38.bed"),
+            "--x_region", os.path.join(common_dir, "chrX_short_arm_hg38.bed"),
             "-t", "4",
         ],
         check=True,

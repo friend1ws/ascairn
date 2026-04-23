@@ -8,22 +8,16 @@ os.environ["POLARS_MAX_THREADS"] = "1"
 
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Resource version: set via ASCAIRN_RESOURCE_VERSION env var (default: ver_2024-12-06)
-RESOURCE_VERSION = os.environ.get("ASCAIRN_RESOURCE_VERSION", "ver_2024-12-06")
-
-
-@pytest.fixture(scope="session")
-def resource_version():
-    return RESOURCE_VERSION
+PANEL_NAME = "ascairn_paper_2025"
 
 
 @pytest.fixture(scope="session")
 def _ascairn_resource_path():
-    """Clone ascairn_resource (devel branch) if not exists and return base path."""
+    """Clone ascairn_resource (main branch) if not exists and return base path."""
     resource_path = os.path.join(TESTS_DIR, "ascairn_resource")
     if not os.path.exists(resource_path):
         subprocess.run(
-            ["git", "clone", "-b", "devel", "https://github.com/friend1ws/ascairn_resource.git"],
+            ["git", "clone", "-b", "main", "https://github.com/friend1ws/ascairn_resource.git"],
             cwd=TESTS_DIR,
             check=True,
         )
@@ -31,15 +25,15 @@ def _ascairn_resource_path():
 
 
 @pytest.fixture(scope="session")
-def resource_dir(_ascairn_resource_path):
-    """Legacy resource directory."""
-    return os.path.join(_ascairn_resource_path, "resource", "legacy", RESOURCE_VERSION)
+def common_dir(_ascairn_resource_path):
+    """Shared BED files (baseline/x_region/cen_region)."""
+    return os.path.join(_ascairn_resource_path, "resource", "common")
 
 
 @pytest.fixture(scope="session")
 def panel_dir(_ascairn_resource_path):
-    """Panel resource directory (kmer_info/ + hap_info/)."""
-    return os.path.join(_ascairn_resource_path, "resource", "panel", "ascairn_paper_2025")
+    """Panel resource directory (kmer_info/ + hap_info/ + rare_kmer_list.fa)."""
+    return os.path.join(_ascairn_resource_path, "resource", "panel", PANEL_NAME)
 
 
 @pytest.fixture(scope="session")
@@ -51,7 +45,7 @@ def output_dir():
 
 @pytest.fixture
 def expected_dir():
-    return os.path.join(TESTS_DIR, "expected", RESOURCE_VERSION)
+    return os.path.join(TESTS_DIR, "expected", PANEL_NAME)
 
 
 @pytest.fixture

@@ -1,0 +1,2 @@
+Cluster_1	Cluster_2	Haplotype_1	Haplotype_2	Contig_len_1	Contig_len_2
+9	9	HG00268.h2	HG00732.h2	2445757	2463156
