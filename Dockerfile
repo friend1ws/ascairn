@@ -35,8 +35,9 @@ RUN wget https://github.com/brentp/mosdepth/releases/download/v0.3.9/mosdepth &&
 RUN python3 -m pip install --upgrade setuptools --break-system-packages
 # RUN python3 -m pip install boto3
 
-RUN git clone https://github.com/friend1ws/ascairn.git && \
-	cd ascairn && \
-	python3 -m pip install . --break-system-packages && \
-	which ascairn 
+# Install the checked-out source (the release tag built by docker-push.yml),
+# not a fresh git clone — that would ignore the build context and follow main.
+COPY . /ascairn
+RUN python3 -m pip install /ascairn --break-system-packages && \
+	which ascairn
 
